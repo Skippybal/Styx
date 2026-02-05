@@ -133,3 +133,4 @@ dmypy.json
 
 # Custom
 aclib2/
+logs/
