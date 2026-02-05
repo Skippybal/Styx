@@ -130,3 +130,6 @@ dmypy.json
 .pyre/
 
 *_config.py
+
+# Custom
+aclib2/
