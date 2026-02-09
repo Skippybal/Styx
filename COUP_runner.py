@@ -40,7 +40,8 @@ class COUP:
         return np.flatnonzero(choice_array == choice_array.max())[0]
         # return np.random.choice(np.flatnonzero(choice_array == choice_array.max()))
 
-    def alpha_p(self, p, n, m, k, delta):
+    @staticmethod
+    def alpha_p(p, n, m, k, delta):
         return math.sqrt(math.log(36 * p ** 2 * n * m ** 2 * (math.log2(k) + 1) ** 2 / delta) / 2 / m)
 
     @staticmethod
