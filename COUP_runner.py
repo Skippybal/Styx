@@ -7,7 +7,9 @@ __author__ = "Skippybal"
 __version__ = "0.1"
 
 import math
+import random
 import sys
+import csv
 import glob
 import time
 import pandas as pd
@@ -15,6 +17,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from ConfigSpace import ConfigurationSpace
+import ConfigSpace as CS
 from ConfigSpace.read_and_write import pcs_new, pcs
 from dask.distributed import Client, progress
 import concurrent.futures
@@ -25,7 +28,7 @@ from aclib2.target_algorithms.gurobi902.wrapper2 import PipelineWrapper
 import multiprocessing as mp
 from multiprocessing import Pool
 
-STORAGE_LOC = "./storage/default7"
+STORAGE_LOC = "./storage/COUP/run1"
 
 class COUP:
     def __init__(self, train_paths, test_paths, config_space):
@@ -34,6 +37,12 @@ class COUP:
         self.config_space = config_space
         self.all_data = {}
         self.configs = {} # TODO: This could also be a list? probably...
+
+        with open(self.train, 'r') as file:
+            self.train_files = [line.strip() for line in file]
+
+        random.seed(721)
+        random.shuffle(self.train_files)
 
     @staticmethod
     def choose_max(main_array, secondary_array):
@@ -50,8 +59,46 @@ class COUP:
     def coup_message(p, r, n_p, i_star, epsilon_star, UCB, LCB, m, k):
         return f"coup: phase p={p}. r={r}. n_p={n_p} configs sampled. i_star={i_star:5}, epsilon_star={epsilon_star:.4f}, ucb=[{np.min(UCB):.4f}, {np.max(UCB):.4f}], lcb=[{np.min(LCB):.4f}, {np.max(LCB):.4f}], m=[{min(m.values())}, {max(m.values())}], k=[{min(k.values())}, {max(k.values())}]"
 
+    def write_configs(self):
+        Path(STORAGE_LOC).mkdir(parents=True, exist_ok=True)
+        # print(CS.get_active_hyperparameters(self.config_space))
+
+        # print(self.config_space.items())
+        # print(self.config_space.keys())
+        # print(list(self.config_space.keys()))
+
+        # print(self.configs[0])
+        # print(self.configs[0].get_array())
+
+        with open(f"{STORAGE_LOC}/configs.csv", "w+") as filehandle:
+            # w = csv.DictWriter(filehandle, ["id"] + list(self.configs[0].keys()))
+            w = csv.DictWriter(filehandle, ["id"] + list(self.config_space.keys()))
+            w.writeheader()
+            # w.writerow(def_dict)
+            for key,val in sorted(self.configs.items()):
+                row = {'id': key}
+                row.update(val)
+                w.writerow(row)
+
+        return 0
+
+    def write_csv(self, config_id):
+        Path(STORAGE_LOC).mkdir(parents=True, exist_ok=True)
+        fields = ['instance_id', 'file', 'status', 'runtime', 'runlength', 'quality', 'seed', 'captime']
+        with open(f"{STORAGE_LOC}/{config_id}.csv", "w+") as filehandle:
+            csv_out = csv.writer(filehandle)
+            csv_out.writerow(fields)
+            for key, val in self.all_data[config_id].items():
+                csv_out.writerow([key, self.train_files[key], *val])
+            # for row in data:
+            #     csv_out.writerow(row)
+
+        return 0
+
     def verify_instance(self, config_id, instance_id, cutoff, specifics="0", runlength="2147483647", seed="-1", runsolver_path='/home/skippybal/Projects/Styx/aclib2/configurators/smac/example_scenarios/spear-generic-wrapper/runsolver'):
         # TODO: could also give flag: captime_increase, and then only do this loop as the instance id should exist
+
+        # Because captime is now in the tuple, we can keep seeing which captime was used to generate the run for later testing
         if instance_id in self.all_data[config_id]:
             if self.all_data[config_id][instance_id][0] != "TIMEOUT":
                 return self.all_data[config_id][instance_id][0]
@@ -63,33 +110,51 @@ class COUP:
         # cutoff = '9600.0'
         # runlength = '2147483647'
         # seed = '-1'
+
+        instance_path = self.train_files[instance_id]
+
         start = ['--runsolver-path',
                  runsolver_path,
-                 instance_path, specifics, cutoff, runlength, seed]
+                 instance_path, specifics, str(cutoff), runlength, seed]
 
         # sys.stdout.write(config)
         variabls = []
         # print(dict(config))
-        for variable, value in dict(self.configs[instance_id]).items():
+        # TODO: store as dict so no need to return
+        # for variable, value in self.configs[instance_id].items():
+        for variable, value in dict(self.configs[config_id]).items():
             # for variable, value in config.items():
             variabls.append(f"-{variable}")
             variabls.append(f'{value}')
 
 
         all_args = start + variabls
-        wrapped_runner.main(all_args)
+        print(all_args)
 
-        # Path("../storage/default").mkdir(parents=True, exist_ok=True)
-        with open(f"{STORAGE_LOC}/{instance_loc.split('/')[-1].split('.')[0][4:]}.txt", "w+") as f:
-            # print(f.read())
-            # f.write(f"{2}, {str(2)} \n")
-            f.write(
-                f"{wrapped_runner._ta_status}, {str(wrapped_runner._ta_runtime)}, {str(wrapped_runner._ta_runlength)},"
-                f"{str(wrapped_runner._ta_quality)}, {str(wrapped_runner._seed)}")
+
+        # store sys.argv as the wrapper extends them
+        #TODO: why did this work for the instance verification? (Because only used default)
+        tmp = list(sys.argv) # This is ref otherwise
+        wrapped_runner.main(all_args)
+        sys.argv = tmp
+        # print(sys.argv)
+        # breakpoint()
+
+        # # Path("../storage/default").mkdir(parents=True, exist_ok=True)
+        # with open(f"{STORAGE_LOC}/{instance_loc.split('/')[-1].split('.config_id')[0][4:]}.txt", "w+") as f:
+        #     # print(f.read())
+        #     # f.write(f"{2}, {str(2)} \n")
+        #     f.write(
+        #         f"{wrapped_runner._ta_status}, {str(wrapped_runner._ta_runtime)}, {str(wrapped_runner._ta_runlength)},"
+        #         f"{str(wrapped_runner._ta_quality)}, {str(wrapped_runner._seed)}")
         #TODO: instance_id or instance loc
         #TODO: store in outer loop not here
-        return (config_id, instance_id, wrapped_runner._ta_status, str(wrapped_runner._ta_runtime),
-                str(wrapped_runner._ta_runlength), str(wrapped_runner._ta_quality), str(wrapped_runner._seed))
+
+        if wrapped_runner._ta_status=="CRASHED":
+            ... # TODO make this captime?
+
+        return (config_id, instance_id, wrapped_runner._ta_status, float(wrapped_runner._ta_runtime),
+                str(wrapped_runner._ta_runlength), str(wrapped_runner._ta_quality), str(wrapped_runner._seed), cutoff)
 
 
     @staticmethod
@@ -131,7 +196,10 @@ class COUP:
             UCB = np.ones(n_p)
             LCB = np.zeros(n_p)
 
-            U_Hat = np.concatenate((U_hat, np.zeros(n_p - ns[-1]))) #Add zeros
+            # print(U_hat)
+            U_hat = np.concatenate((U_hat, np.zeros(n_p - ns[-1]))) #Add zeros
+            # print(U_hat)
+            # breakpoint()
 
             # TODO: figure out why we do this this way
             # alpha_p is confidence width as defined in COUP paper but I dont know exactely what it do
@@ -145,6 +213,16 @@ class COUP:
                 m[i] = 0
                 k[i] = k0
                 # TODO: sample new configs here
+
+                self.all_data[i] = {}
+
+                if i == 0:
+                    self.configs[i] = self.config_space.get_default_configuration()
+                else:
+                    self.configs[i] = self.config_space.sample_configuration()
+
+            self.write_configs()
+            breakpoint()
 
             ns.append(n_p)
 
@@ -180,6 +258,8 @@ class COUP:
 
 
                 # TODO: after this it sould write to csv... but need to look into doulbess, or just write self.all_data to csv?
+                # TODO: every config gets a CSV
+                # so every config gets its own csv, but it should somewher ein that file also have the filepath for each instace
                 if dubcond:
                     k[i] = 2 * k[i]
                     #TODO: here we need to make sure we only rerun the ones that have t>k
@@ -187,10 +267,11 @@ class COUP:
                     # runtimes = [env.run(i, j, k[i]) for j in range(m[i])]
                     runtimes = []
                     for j in range(m[i]):
-                        config_id, instance_id, ta_status, runtime, ta_runlength, ta_quality, seed = self.verify_instance(i, m[i] - 1, k[i])
+                        config_id, instance_id, ta_status, runtime, ta_runlength, ta_quality, seed, used_captime = self.verify_instance(i, m[i] - 1, k[i])
+                        time.sleep(5)
                         #TODO: here store to all data
                         # TODO: should this tuple also contain captime?
-                        self.all_data[config_id][instance_id] = (ta_status, runtime, ta_runlength, ta_quality, seed)
+                        self.all_data[config_id][instance_id] = (ta_status, runtime, ta_runlength, ta_quality, seed, used_captime)
                         runtimes.append(runtime)
 
                     F_hat[i] = sum([1 if t < k[i] else 0 for t in runtimes]) / m[i]
@@ -198,13 +279,14 @@ class COUP:
                 else: # otherwise, just run the next instance
 
                     # runtime = env.run(i, m[i] - 1, k[i])
-                    config_id, instance_id, ta_status, runtime, ta_runlength, ta_quality, seed = self.verify_instance(i, m[i] - 1, k[i])
-                    self.all_data[config_id][instance_id] = (ta_status, runtime, ta_runlength, ta_quality, seed)
+                    config_id, instance_id, ta_status, runtime, ta_runlength, ta_quality, seed, used_captime = self.verify_instance(i, m[i] - 1, k[i])
+                    # time.sleep(5)
+                    self.all_data[config_id][instance_id] = (ta_status, runtime, ta_runlength, ta_quality, seed, used_captime)
 
                     F_hat[i] = ((m[i] - 1) * F_hat[i] + (1 if runtime < k[i] else 0)) / m[i]
                     U_hat[i] = ((m[i] - 1) * U_hat[i] + utility(runtime)) / m[i]
 
-
+                self.write_csv(i)
 
                 alpha_i = self.alpha_p(p, n_p, m[i], k[i], delta)
                 UCB[i] = min(U_hat[i] + (1 - utility(k[i])) * alpha_i, UCB[i])
@@ -263,13 +345,35 @@ class COUP:
             # TODO: over runtime plotting, so as in coup the env has total_time/s
             # So plot incumbent over CPU time?
 
+    @staticmethod
+    def log_laplace_single(t, k_0, alpha=1):
+        if t < k_0:
+            return 1 - 0.5 * (t / k_0) ** alpha
+        else:
+            return 0.5 * (k_0 / t) ** alpha
 
 
+def epsilon_fn(p):
+    return math.exp(- (p / 6))
 
-
+def gamma_fn(p):
+    return math.exp(- p / 3)
 
 def main():
+    with open('aclib2/target_algorithms/gurobi902/params_test.pcs', 'r') as fh:
+        deserialized_conf = pcs_new.read(fh)
 
+    deserialized_conf.seed(721)
+
+    runner = COUP("./aclib2/instances/mip/sets/SDPdMLPa-MIPVerify/training.txt",
+                  "./aclib2/instances/mip/sets/SDPdMLPa-MIPVerify/test.txt",
+                  deserialized_conf)
+    k_0 = 5
+    delta = 0.05
+    runner.run(utility=lambda t: COUP.log_laplace_single(t, k_0=k_0, alpha=1), delta=delta,
+               epsilon_fn=epsilon_fn, gamma_fn=gamma_fn, k0=k_0,
+               # max_phases=args.numphases, n_max=env.num_configs, m_max=env.num_instances,
+               doubling_condition="new", improved_tie_breaking=True)
     return 0
 
 
