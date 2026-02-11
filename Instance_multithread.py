@@ -24,14 +24,14 @@ from aclib2.target_algorithms.gurobi902.wrapper2 import PipelineWrapper
 import multiprocessing as mp
 from multiprocessing import Pool
 
-STORAGE_LOC = "./storage/default"
+STORAGE_LOC = "./storage/default_test"
 
-def verify_instance(instance_loc: str, config: ConfigurationSpace):
+def verify_instance(instance_loc: str, config: ConfigurationSpace, output_queue):
     wrapped_runner = PipelineWrapper()
     # instance_path = '/home/skippybal/Projects/THESIS/aclib2/instances/mip/data/SDPdMLPa-MIPVerify/mip_29.lp'
     instance_path = instance_loc
     specifics = '0'
-    cutoff = '9600.0'
+    cutoff = '5'#'9600.0'
     runlength = '2147483647'
     seed = '-1'
     start = ['--runsolver-path',
@@ -66,6 +66,8 @@ def verify_instance(instance_loc: str, config: ConfigurationSpace):
         f.write(f"{wrapped_runner._ta_status}, {str(wrapped_runner._ta_runtime)}, {str(wrapped_runner._ta_runlength)},"
                 f"{str(wrapped_runner._ta_quality)}, {str(wrapped_runner._seed)}")
     # return [1,1,1,1,1]
+    output_queue.put((wrapped_runner._ta_status, str(wrapped_runner._ta_runtime),
+            str(wrapped_runner._ta_runlength), str(wrapped_runner._ta_quality), str(wrapped_runner._seed)))
     return [wrapped_runner._ta_status, str(wrapped_runner._ta_runtime),
             str(wrapped_runner._ta_runlength), str(wrapped_runner._ta_quality), str(wrapped_runner._seed)]
 
@@ -127,6 +129,8 @@ def main():
     process_data_list = []
     max_processes = 4
 
+    output_queue = mp.Queue()
+
     instance_index = 0
     while instance_index < len(all_files):
         cleanup_done = False
@@ -136,12 +140,13 @@ def main():
                 if not process_data[1].is_alive():
                     print(f"finished {process_data[0]}")
                     p = process_data_list.pop(i)
+                    breakpoint()
                     del p
                     cleanup_done = False
                     break
 
         if len(process_data_list) < max_processes:
-            process = mp.Process(target=verify_instance, args=(all_files[instance_index], default))
+            process = mp.Process(target=verify_instance, args=(all_files[instance_index], default, output_queue))
             process.start()
             process_data_list.append([instance_index, process])
             print(f"starting {instance_index}: {all_files[instance_index]}")
