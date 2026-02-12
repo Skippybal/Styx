@@ -261,7 +261,7 @@ class COUP:
                 # TODO: every config gets a CSV
                 # so every config gets its own csv, but it should somewher ein that file also have the filepath for each instace
                 if dubcond:
-                    breakpoint()
+                    # breakpoint()
                     k[i] = 2 * k[i]
                     #TODO: here we need to make sure we only rerun the ones that have t>k
 
