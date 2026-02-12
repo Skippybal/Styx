@@ -28,7 +28,7 @@ from aclib2.target_algorithms.gurobi902.wrapper2 import PipelineWrapper
 import multiprocessing as mp
 from multiprocessing import Pool
 
-STORAGE_LOC = "./storage/COUP/run1"
+STORAGE_LOC = "./storage/COUP/run_test_dubcond"
 
 class COUP:
     def __init__(self, train_paths, test_paths, config_space):
@@ -222,7 +222,7 @@ class COUP:
                     self.configs[i] = self.config_space.sample_configuration()
 
             self.write_configs()
-            breakpoint()
+            # breakpoint()
 
             ns.append(n_p)
 
@@ -256,19 +256,23 @@ class COUP:
                 elif doubling_condition == "new":
                     dubcond = 2 * (1 - utility(k[i])) * alpha_i <= utility(k[i]) * (1 - F_hat[i] + alpha_i)
 
-
+                # dubcond=True
                 # TODO: after this it sould write to csv... but need to look into doulbess, or just write self.all_data to csv?
                 # TODO: every config gets a CSV
                 # so every config gets its own csv, but it should somewher ein that file also have the filepath for each instace
                 if dubcond:
+                    breakpoint()
                     k[i] = 2 * k[i]
                     #TODO: here we need to make sure we only rerun the ones that have t>k
 
                     # runtimes = [env.run(i, j, k[i]) for j in range(m[i])]
                     runtimes = []
                     for j in range(m[i]):
-                        config_id, instance_id, ta_status, runtime, ta_runlength, ta_quality, seed, used_captime = self.verify_instance(i, m[i] - 1, k[i])
-                        time.sleep(5)
+                        # config_id, instance_id, ta_status, runtime, ta_runlength, ta_quality, seed, used_captime = self.verify_instance(i, m[i] - 1, k[i])
+                        config_id, instance_id, ta_status, runtime, ta_runlength, ta_quality, seed, used_captime = self.verify_instance(
+                            i, j, k[i])
+
+                        # time.sleep(5)
                         #TODO: here store to all data
                         # TODO: should this tuple also contain captime?
                         self.all_data[config_id][instance_id] = (ta_status, runtime, ta_runlength, ta_quality, seed, used_captime)
@@ -291,6 +295,7 @@ class COUP:
                 alpha_i = self.alpha_p(p, n_p, m[i], k[i], delta)
                 UCB[i] = min(U_hat[i] + (1 - utility(k[i])) * alpha_i, UCB[i])
                 LCB[i] = max(U_hat[i] - alpha_i - utility(k[i]) * (1 - F_hat[i]), LCB[i])
+                # breakpoint()
 
                 #TODO: check? is this tiebreaking based on LCB first and the maximizing U_hat?
                 if improved_tie_breaking:
@@ -368,12 +373,14 @@ def main():
     runner = COUP("./aclib2/instances/mip/sets/SDPdMLPa-MIPVerify/training.txt",
                   "./aclib2/instances/mip/sets/SDPdMLPa-MIPVerify/test.txt",
                   deserialized_conf)
-    k_0 = 5
+    k_0 = 250
     delta = 0.05
-    runner.run(utility=lambda t: COUP.log_laplace_single(t, k_0=k_0, alpha=1), delta=delta,
+    out = runner.run(utility=lambda t: COUP.log_laplace_single(t, k_0=k_0, alpha=1), delta=delta,
                epsilon_fn=epsilon_fn, gamma_fn=gamma_fn, k0=k_0,
+               save_mod=1, print_mod=1,
                # max_phases=args.numphases, n_max=env.num_configs, m_max=env.num_instances,
                doubling_condition="new", improved_tie_breaking=True)
+    print(out)
     return 0
 
 
