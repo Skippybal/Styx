@@ -27,8 +27,9 @@ from aclib2.target_algorithms.gurobi902.wrapper2 import PipelineWrapper
 
 import multiprocessing as mp
 from multiprocessing import Pool
+import wandb
 
-STORAGE_LOC = "./storage/COUP/run_test_multi"
+STORAGE_LOC = "./storage/COUP/run_test_multi2"
 
 class COUP:
     def __init__(self, train_paths, test_paths, config_space, pool_size=5):
@@ -45,6 +46,21 @@ class COUP:
 
         random.seed(721)
         random.shuffle(self.train_files)
+
+        self.run_handle = wandb.init(
+            # Set the wandb entity where your project will be logged (generally your team name).
+            entity="knotebomer-leiden-university",
+            # Set the wandb project where this run will be logged.
+            project="Styx",
+            # Track hyperparameters and run metadata.
+            # config={
+            #     "learning_rate": 0.02,
+            #     "architecture": "CNN",
+            #     "dataset": "CIFAR-100",
+            #     "epochs": 10,
+            # },
+        )
+
 
     @staticmethod
     def choose_max(main_array, secondary_array):
@@ -359,6 +375,24 @@ class COUP:
                 i_prime = np.argmax(UCB)
                 epsilon_star = UCB[i_prime] - LCB[i_star]
 
+                self.run_handle.log({
+                    "phase": p,
+                    "r": r, #TODO: This r might be wrong should maybe have poolsize instaed of +1
+                    "n_configs": n_p,
+                    "i_star": i_star,
+                    "epsilon_star": epsilon_star,
+                    "ucb_min": min(UCB),
+                    "ucb_max": max(UCB),
+                    "lcb_min": min(LCB),
+                    "lcb_max": max(LCB),
+                    "m_min": min(m.values()),
+                    "m_max": max(m.values()),
+                    "k_min": min(k.values()),
+                    "k_max": max(k.values()),
+                    "U_hat": {conv_id: conf_u_hat for conv_id, conf_u_hat in enumerate(U_hat)},#U_hat,
+                    "F_hat": F_hat
+                })
+                # TODO: log the utility of every config?
 
                 if r % save_mod == 0:
                     self.update_output(out, i_star=i_star, epsilon_star=epsilon_star, total_time=0, total_times=0)
