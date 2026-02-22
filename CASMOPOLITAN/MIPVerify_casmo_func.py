@@ -10,6 +10,8 @@ from wrapper2 import PipelineWrapper
 import glob
 import time
 import sys
+from dotenv import load_dotenv, dotenv_values
+import os
 
 
 class MIPVerifyOracle(TestFunction):
@@ -17,6 +19,8 @@ class MIPVerifyOracle(TestFunction):
 
     def __init__(self, lamda=1e-6, normalize=False):
         super(MIPVerifyOracle, self).__init__(normalize)
+        self.env_config = dotenv_values(".env")
+
         self.categorical_dims, self.continuous_dims, self.dim, self.config, self.lb, self.ub, self.index_choice_dict, self.int_constrained_dims, self.names = self._process_param_space()
         # categorical, continuous, len(categorical) + len(
         #     continuous), n_categories, cont_lb, cont_ub, cat_choices, int_disc
@@ -32,10 +36,17 @@ class MIPVerifyOracle(TestFunction):
 
         # self._process_param_space()
 
-        self.all_files = sorted(glob.glob("/home/skippybal/Projects/Styx/aclib2/instances/mip/data/SDPdMLPa-MIPVerify/*.lp"),
+        # load_dotenv()
+
+        self.all_files = sorted(glob.glob(f"{self.env_config['INSTANCE_DIR']}/*.lp"),
                            key=lambda x: int(x.split("/")[-1].split(".")[0][4:]))
 
-    def _process_param_space(self, param_file_loc="/home/skippybal/Projects/Styx/CASMOPOLITAN/params_cosmo.pcs"):
+    def _process_param_space(self):
+        # param_file_loc = os.getenv('PARAM_FILE_LOC')
+        # breakpoint()
+        param_file_loc = self.env_config['PARAM_FILE_LOC']
+        # load_dotenv()
+        # breakpoint()
         with open(param_file_loc, 'r') as fh:
             deserialized_conf = pcs_new.read(fh)
         deserialized_conf.seed(721)
@@ -115,11 +126,12 @@ class MIPVerifyOracle(TestFunction):
 
         instance_path = instance_loc
         specifics = '0'
-        cutoff = '10'  # '9600.0' # TODO: fix this cutoff
+        cutoff = str(self.env_config["ORACLE_CAPTIME"]) #'10'  # '9600.0' # TODO: fix this cutoff
         runlength = '2147483647'
         seed = '-1'
         start = ['--runsolver-path',
-                 '/home/skippybal/Projects/Styx/aclib2/configurators/smac/example_scenarios/spear-generic-wrapper/runsolver',
+                 # os.getenv("RUNSOLVER_LOC"),
+                 self.env_config["RUNSOLVER_LOC"],
                  instance_path, specifics, cutoff, runlength, seed,
                  '-threads', '1'] # TODO: threads seperate here becuase integration with casmopolitan
 
@@ -199,7 +211,7 @@ class MIPVerifyOracle(TestFunction):
                         new_result = output_queue.get()
 
                         # TODO: this captime thiny fix.... make consistent with the one above in verify_instance..
-                        all_utility.append(log_laplace_single(new_result[0], 250))
+                        all_utility.append(log_laplace_single(new_result[0], int(self.env_config["K0_UTILITY"])))
 
 
 
@@ -225,7 +237,7 @@ class MIPVerifyOracle(TestFunction):
                     new_result = output_queue.get()
 
                     # TODO: this captime thiny fix.... make consistent with the one above in verify_instance..
-                    all_utility.append(log_laplace_single(new_result[0], 250))
+                    all_utility.append(log_laplace_single(new_result[0], int(self.env_config["K0_UTILITY"])))
 
                     del p
                     cleanup_done = False
