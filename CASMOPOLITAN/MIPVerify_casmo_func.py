@@ -243,7 +243,7 @@ class MIPVerifyOracle(TestFunction):
                     cleanup_done = False
                     break
 
-        return np.mean(all_utility)
+        return -np.mean(all_utility)
 
     def compute(self, X, normalize=None):
         if X.ndim == 1:
