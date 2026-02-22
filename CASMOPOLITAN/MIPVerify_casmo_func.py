@@ -39,7 +39,7 @@ class MIPVerifyOracle(TestFunction):
         # load_dotenv()
 
         self.all_files = sorted(glob.glob(f"{self.env_config['INSTANCE_DIR']}/*.lp"),
-                           key=lambda x: int(x.split("/")[-1].split(".")[0][4:]))
+                           key=lambda x: int(x.split("/")[-1].split(".")[0][4:]))[:4]
 
     def _process_param_space(self):
         # param_file_loc = os.getenv('PARAM_FILE_LOC')
@@ -193,7 +193,7 @@ class MIPVerifyOracle(TestFunction):
         all_utility = []
 
         process_data_list = []
-        max_processes = 1
+        max_processes = int(self.env_config["MAX_PROCESSES"]) #1
 
         output_queue = mp.Queue()
 
@@ -206,12 +206,12 @@ class MIPVerifyOracle(TestFunction):
                     if not process_data[1].is_alive():
                         print(f"finished {process_data[0]}")
                         p = process_data_list.pop(i)
-                        breakpoint()
+                        # breakpoint()
 
                         new_result = output_queue.get()
 
                         # TODO: this captime thiny fix.... make consistent with the one above in verify_instance..
-                        all_utility.append(log_laplace_single(new_result[0], int(self.env_config["K0_UTILITY"])))
+                        all_utility.append(log_laplace_single(new_result[1], int(self.env_config["K0_UTILITY"])))
 
 
 
@@ -237,12 +237,12 @@ class MIPVerifyOracle(TestFunction):
                     new_result = output_queue.get()
 
                     # TODO: this captime thiny fix.... make consistent with the one above in verify_instance..
-                    all_utility.append(log_laplace_single(new_result[0], int(self.env_config["K0_UTILITY"])))
+                    all_utility.append(log_laplace_single(new_result[1], int(self.env_config["K0_UTILITY"])))
 
                     del p
                     cleanup_done = False
                     break
-
+        # breakpoint()
         return -np.mean(all_utility)
 
     def compute(self, X, normalize=None):
