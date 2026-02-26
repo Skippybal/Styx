@@ -129,7 +129,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-*_config.py
+#*_config.py
 
 # Custom
 aclib2/
