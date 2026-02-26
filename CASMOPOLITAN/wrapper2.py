@@ -23,12 +23,15 @@ from subprocess import Popen, PIPE
 from tempfile import NamedTemporaryFile
 
 from pathlib import Path
+import dotenv
 
 __all__ = []
 __version__ = 0.1
 __authors__ = 'Marius Lindauer, Chris Fawcett, Alex Fréchette, Frank Hutter'
 __date__ = '2014-03-06'
 __updated__ = '2014-03-21'
+
+from dotenv import load_dotenv
 
 
 def signalHandler(signum, frame):
@@ -536,7 +539,8 @@ class PipelineWrapper(AbstractWrapper):
         Returns:
             A command call list to execute the target algorithm.
         '''
-        binary_path = "/home/skippybal/Projects/THESIS/aclib2/target_algorithms/gurobi902/run_gurobi.py"
+        load_dotenv()
+        binary_path = os.getenv("BINARY_PATH") #"/home/skippybal/Projects/THESIS/aclib2/target_algorithms/gurobi902/run_gurobi.py"
         cmd = "python %s --name %s" % (binary_path, runargs["instance"])
         for name, value in config.items():
             cmd += " -%s %s" % (name, value)
