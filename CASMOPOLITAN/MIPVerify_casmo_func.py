@@ -40,7 +40,7 @@ class MIPVerifyOracle(TestFunction):
         # load_dotenv()
 
         self.all_files = sorted(glob.glob(f"{self.env_config['INSTANCE_DIR']}/*.lp"),
-                           key=lambda x: int(x.split("/")[-1].split(".")[0][4:]))[:4]
+                           key=lambda x: int(x.split("/")[-1].split(".")[0][4:]))#[:4]
 
     def _process_param_space(self):
         # param_file_loc = os.getenv('PARAM_FILE_LOC')
