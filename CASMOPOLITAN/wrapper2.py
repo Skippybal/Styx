@@ -89,7 +89,7 @@ class AbstractWrapper(object):
 
         self._subprocesses = []
 
-        self._DEBUG = True
+        self._DEBUG = False#True
         self._DELAY2KILL = 2
 
         self._ta_status = "EXTERNALKILL"
@@ -189,7 +189,7 @@ class AbstractWrapper(object):
                 self._exit_code = 1
                 sys.exit(1)
 
-            print(target_args)
+            # print(target_args)
             config_dict = self.build_parameter_dict(target_args)
             runargs = {
                 "instance": self._instance,
