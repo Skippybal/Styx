@@ -12,6 +12,7 @@ import time
 import sys
 from dotenv import load_dotenv, dotenv_values
 import os
+import math
 
 
 class MIPVerifyOracle(TestFunction):
@@ -182,6 +183,22 @@ class MIPVerifyOracle(TestFunction):
                           str(wrapped_runner._ta_runlength), str(wrapped_runner._ta_quality),
                           str(wrapped_runner._seed)))
 
+    @staticmethod
+    def log_laplace_single(t, k_0, alpha=1):
+        if t < k_0:
+            return 1 - 0.5 * (t / k_0) ** alpha
+        else:
+            return 0.5 * (k_0 / t) ** alpha
+
+    @staticmethod
+    def u_geometric(t, k0, k1):
+        if t < k0:
+            return 1
+        elif t < k1:
+            return math.log(k1 / t) / math.log(k1 / k0)
+        else:
+            return 0
+
 
     def _verify_instances_config(self, single_config):
         def log_laplace_single(t, k_0, alpha=1):
@@ -211,7 +228,8 @@ class MIPVerifyOracle(TestFunction):
                         new_result = output_queue.get()
 
                         # TODO: this captime thiny fix.... make consistent with the one above in verify_instance..
-                        all_utility.append(log_laplace_single(new_result[1], int(self.env_config["K0_UTILITY"])))
+                        # all_utility.append(log_laplace_single(new_result[1], int(self.env_config["K0_UTILITY"])))
+                        all_utility.append(self.u_geometric(new_result[1], int(self.env_config["K0_UTILITY"]), int(self.env_config["K1_UTILITY"])))
 
 
 
@@ -237,7 +255,8 @@ class MIPVerifyOracle(TestFunction):
                     new_result = output_queue.get()
 
                     # TODO: this captime thiny fix.... make consistent with the one above in verify_instance..
-                    all_utility.append(log_laplace_single(new_result[1], int(self.env_config["K0_UTILITY"])))
+                    # all_utility.append(log_laplace_single(new_result[1], int(self.env_config["K0_UTILITY"])))
+                    all_utility.append(self.u_geometric(new_result[1], int(self.env_config["K0_UTILITY"]), int(self.env_config["K1_UTILITY"])))
 
                     del p
                     cleanup_done = False
