@@ -173,11 +173,18 @@ class MIPVerifyOracle(TestFunction):
         sys.argv = sys.argv[:1]
         all_args = start + variabls
 
-        wrapped_runner.main(all_args)
+        try:
+            wrapped_runner.main(all_args)
+        except UnicodeDecodeError as e:
+            print(f"Error found, {e}")
+            print(f"Returning EXTERNALKILL with max captime")
+            wrapped_runner._ta_runtime = int(int(self.env_config["ORACLE_CAPTIME"])) # TODO: this doesnt really matter with utility func as util will be 0, but does matter in smac....
+
+
         sys.argv = sys.argv[:1]
 
         if wrapped_runner._ta_status in ["CRACHED"]:
-            wrapped_runner._ta_runtime = 10 # cutoff time
+            wrapped_runner._ta_runtime = int(self.env_config["ORACLE_CAPTIME"]) #10 # cutoff time
 
         output_queue.put((wrapped_runner._ta_status, float(wrapped_runner._ta_runtime),
                           str(wrapped_runner._ta_runlength), str(wrapped_runner._ta_quality),
