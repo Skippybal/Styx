@@ -154,7 +154,7 @@ def main():
                 all_data.append(new_result)
 
                 df = pd.DataFrame.from_records(all_data,
-                                               columns=['File', 'Status', 'Runtime', 'Runlength', 'quality', 'seed'])
+                                               columns=['Status', 'Runtime', 'Runlength', 'quality', 'seed', "File"])
                 df.to_csv(f"{STORAGE_LOC}/all_outputs.csv")
 
                 del p
