@@ -44,7 +44,7 @@ def verify_instance(instance_loc: str, args_list, output_queue):
     # instance_path = '/home/skippybal/Projects/THESIS/aclib2/instances/mip/data/SDPdMLPa-MIPVerify/mip_29.lp'
     instance_path = instance_loc
     specifics = '0'
-    cutoff = '5'#'9600.0'
+    cutoff = '9600.0' #'5'#'9600.0'
     runlength = '2147483647'
     seed = '-1'
     start = ['--runsolver-path',
