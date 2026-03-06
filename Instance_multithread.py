@@ -15,8 +15,8 @@ import numpy as np
 from pathlib import Path
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace.read_and_write import pcs_new, pcs
-from dask.distributed import Client, progress
-import concurrent.futures
+# from dask.distributed import Client, progress
+# import concurrent.futures
 
 # from target_algorithms.bbob.branin.braninWrapper import runlength
 from aclib2.target_algorithms.gurobi902.wrapper2 import PipelineWrapper
@@ -24,14 +24,14 @@ from aclib2.target_algorithms.gurobi902.wrapper2 import PipelineWrapper
 import multiprocessing as mp
 from multiprocessing import Pool
 
-STORAGE_LOC = "./storage/default_test"
+STORAGE_LOC = "./storage/default_test_orcle"
 
 def verify_instance(instance_loc: str, config: ConfigurationSpace, output_queue):
     wrapped_runner = PipelineWrapper()
     # instance_path = '/home/skippybal/Projects/THESIS/aclib2/instances/mip/data/SDPdMLPa-MIPVerify/mip_29.lp'
     instance_path = instance_loc
     specifics = '0'
-    cutoff = '5'#'9600.0'
+    cutoff = '9600' #'5'#'9600.0'
     runlength = '2147483647'
     seed = '-1'
     start = ['--runsolver-path',
@@ -44,15 +44,34 @@ def verify_instance(instance_loc: str, config: ConfigurationSpace, output_queue)
     # print(dict(config))
     for variable, value in dict(config).items():
     # for variable, value in config.items():
-        variabls.append(f"-{variable}")
+        variabls.append(f"-{variable}") #TODO: does this need to be doulbe dash?
         variabls.append(f'{value}')
 
     # variabls.extend(["runsolvtarget_argser", "None"])
+    # print(sys.argv)
+
+    # TODO: check sys.argv....
+
+    # try:
+    #     raise IOError()
+    # except IOError:
+    #     print("Error found, returning")
 
     all_args = start + variabls
-    wrapped_runner.main(all_args)
 
-    # sys.stdout.write(
+    try:
+        wrapped_runner.main(all_args)
+    except Exception as e:
+        print(f"Error found, {e}")
+        # print(f"Returning CRASHED with max captime")
+        print(f"Returning EXTERNAKILL with max captime")
+        # wrapped_runner._ta_runtime = 10000
+        # print([wrapped_runner._ta_status, str(wrapped_runner._ta_runtime),
+        #     str(wrapped_runner._ta_runlength), str(wrapped_runner._ta_quality), str(wrapped_runner._seed)])
+        # return [wrapped_runner._ta_status, str(wrapped_runner._ta_runtime),
+        #     str(wrapped_runner._ta_runlength), str(wrapped_runner._ta_quality), str(wrapped_runner._seed)]
+
+        # sys.stdout.write(
     #     "Result for SMAC: %s, %s, %s, %s, %s" % (wrapped_runner._ta_status, str(wrapped_runner._ta_runtime),
     #                                              str(wrapped_runner._ta_runlength),
     #                                              str(wrapped_runner._ta_quality), str(wrapped_runner._seed)))
