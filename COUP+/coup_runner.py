@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from solver import Solver
 from coup import COUP
 from utils import parse_u, u_to_str, ensure_directory
+from dotenv import load_dotenv
 
 
 
@@ -50,7 +51,11 @@ if __name__ == "__main__":
 
     # instances = [os.path.join(args.instancedir, f) for f in os.listdir(args.instancedir) if f.endswith('.cnf')]
     # TODO: fix this to use instance file
-    instances = [os.path.join(args.instancedir, f) for f in os.listdir(args.instancedir) if f.endswith('.lp')]
+    # instances = [os.path.join(args.instancedir, f) for f in os.listdir(args.instancedir) if f.endswith('.lp')]
+    load_dotenv()
+    with open(os.getenv("TRAIN_INSTANCE_FILE")) as filehandle:
+        instances = [line.rstrip() for line in filehandle]
+    breakpoint()
     instances.sort() # sort for reproducibility 
     np.random.seed(args.seed)
     np.random.shuffle(instances)
