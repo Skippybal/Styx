@@ -325,6 +325,7 @@ class COUP:
         """ Numerically solve for DKL-based upper bound """
         if mu_hat >= 1 - eps:
             return 1
+        # breakpoint()
         xs = np.linspace(mu_hat, 1 - eps, numpts)
         dkls = np.array([self.d(mu_hat, x) for x in xs])
         ucbs = xs[dkls < a]

@@ -55,7 +55,7 @@ if __name__ == "__main__":
     load_dotenv()
     with open(os.getenv("TRAIN_INSTANCE_FILE")) as filehandle:
         instances = [line.rstrip() for line in filehandle]
-    breakpoint()
+    # breakpoint()
     instances.sort() # sort for reproducibility 
     np.random.seed(args.seed)
     np.random.shuffle(instances)

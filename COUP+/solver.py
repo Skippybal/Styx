@@ -332,7 +332,7 @@ class Solver():
         if self._name == "MipVerify":
             # ...
             ta_status, runtime, ta_runlength, ta_quality, seed = self.verify_instance(instance, captime, config, output_queue=None, seed=seed)
-            breakpoint()
+            # breakpoint()
             return runtime
             # breakpoint()
         else:
