@@ -9,7 +9,7 @@ import torch
 
 FUNCTION_DIMENSIONALITY = 50
 DTYPE = "float64"
-DEVICE = "gpu"
+# DEVICE = "cuda"
 
 
 Benchmark.flip = True
@@ -54,7 +54,7 @@ Bounce.maximum_number_evaluations = 200
 Bounce.batch_size = 1
 Bounce.benchmark = @CustomVerify()
 Bounce.results_dir = "results_mipverify"
-Bounce.device = %DEVICE
+# Bounce.device = %DEVICE
 Bounce.dtype = %DTYPE
 Bounce.use_scipy_lbfgs = True
 Bounce.maximum_number_evaluations_until_input_dim = 100
