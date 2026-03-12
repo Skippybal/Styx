@@ -47,8 +47,8 @@ SVMMixed.n_features = 50
 
 # Bounce configuration
 
-Bounce.number_initial_points = 20
-Bounce.initial_target_dimensionality = 10
+Bounce.number_initial_points = 5
+Bounce.initial_target_dimensionality = 5
 Bounce.number_new_bins_on_split = 2
 Bounce.maximum_number_evaluations = 200
 Bounce.batch_size = 1
