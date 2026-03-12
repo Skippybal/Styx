@@ -2201,6 +2201,6 @@ class CustomVerify(Benchmark):
                     "fX": results[-1],
                 }, commit=True)
 
-        return np.array(results)
+        return torch.tensor(results)
 
         return
