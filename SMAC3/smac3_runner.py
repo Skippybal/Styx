@@ -1,3 +1,6 @@
+'''
+'''
+
 import os
 import sys
 import argparse
@@ -6,13 +9,64 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # from solver import Solver
-# from utils import parse_u, u_to_str, ensure_directory, safe_save
+from utils import parse_u, u_to_str, ensure_directory, safe_save
 
 from smac import AlgorithmConfigurationFacade as ACFacade
 from smac import Scenario
 
 from dotenv import load_dotenv
 from ConfigSpace.read_and_write import pcs_new
+import ConfigSpace
+from wrapper2 import PipelineWrapper
+from copy import copy
+
+
+def verify_instance(instance_loc: str, cutoff, config: ConfigSpace, output_queue, seed):  # TODO: seed
+
+    wrapped_runner = PipelineWrapper()
+
+    instance_path = instance_loc
+    specifics = '0'
+    cutoff = str(cutoff)
+    runlength = '2147483647'
+    seed = '-1'
+    start = ['--runsolver-path',
+             # os.getenv("RUNSOLVER_LOC"),
+             os.getenv("RUNSOLVER_LOC"),
+             instance_path, specifics, cutoff, runlength, seed,
+             '-threads', '1' # TODO: check this for all methods
+             ]
+
+    variabls = []
+
+    for variable, value in dict(config).items():
+        variabls.append(f"-{variable}")
+        variabls.append(f'{value}')
+
+    tmp = copy(sys.argv)
+    sys.argv = sys.argv[:1]
+    all_args = start + variabls
+
+    try:
+        wrapped_runner.main(all_args)
+    except UnicodeDecodeError as e:
+        print(f"Error found, {e}")
+        print(f"Returning EXTERNALKILL with max captime")
+        wrapped_runner._ta_runtime = int(int(os.getenv(
+            "ORACLE_CAPTIME")))  # TODO: this doesnt really matter with utility func as util will be 0, but does matter in smac....
+
+    sys.argv = tmp  # ys.argv[:1]
+
+    if wrapped_runner._ta_status in ["CRACHED"]:
+        wrapped_runner._ta_runtime = int(os.getenv("ORACLE_CAPTIME"))  # 10 # cutoff time
+
+    # output_queue.put((wrapped_runner._ta_status, float(wrapped_runner._ta_runtime),
+    #                   str(wrapped_runner._ta_runlength), str(wrapped_runner._ta_quality),
+    #                   str(wrapped_runner._seed)))
+    return (wrapped_runner._ta_status, float(wrapped_runner._ta_runtime),
+            str(wrapped_runner._ta_runlength), str(wrapped_runner._ta_quality),
+            str(wrapped_runner._seed))
+
 
 def main():
     load_dotenv()
@@ -28,7 +82,7 @@ def main():
     # parser.add_argument('--runsolver', help="path to runsolver", default="../runsolver/runsolverx64/runsolver",
     #                     type=str)
 
-    # parser.add_argument("--instancefeatures", help="path to file describing instance features", nargs='?', default=None)
+    parser.add_argument("--instancefeatures", help="path to file describing instance features", nargs='?', default=None)
     parser.add_argument('--max_wallclock_time', help="wallclock time limit for smac, seconds", nargs='?', default=1e10,
                         type=float)
     parser.add_argument('--max_cpu_time', help="cpu time limit for smac, seconds", nargs='?', default=1e10, type=float)
@@ -84,6 +138,9 @@ def main():
     #         if "../aclib2/" + inst in instances:
     #             instance_features["../aclib2/" + inst] = list(feat)
 
+    # global total_cpu_time
+    global smac
+
     if os.path.exists(training_savepath) and not args.overwrite:
         state = pickle.load(open(training_savepath, 'rb'))
         observation_times_cpu = state['observation_times_cpu']
@@ -101,32 +158,38 @@ def main():
         global total_cpu_time
         global smac
 
-        # get the current incumbent from smac's runhistory
-        if len(smac.runhistory) > 1:
-            trialkey = list(smac.runhistory)[-2]
-            trialvalue = smac.runhistory[trialkey]
-            incumbent = trialvalue.additional_info['incumbent']
-        else:
-            incumbent = None
-        incumbents.append(incumbent)
+        # # get the current incumbent from smac's runhistory
+        # if len(smac.runhistory) > 1:
+        #     trialkey = list(smac.runhistory)[-2]
+        #     trialvalue = smac.runhistory[trialkey]
+        #     print(trialvalue)
+        #     sys.exit(1)
+        #     incumbent = trialvalue.additional_info['incumbent']
+        # else:
+        #     incumbent = None
+        # incumbents.append(incumbent)
 
         # and the current total_cpu_time
-        observation_times_cpu.append(total_cpu_time)
+        # observation_times_cpu.append(total_cpu_time)
 
         # save the current incumbent and total_cpu_time
-        safe_save({'observation_times_cpu': observation_times_cpu, 'i_stars': incumbents}, training_savepath)
+        # safe_save({'observation_times_cpu': observation_times_cpu, 'i_stars': incumbents}, training_savepath)
+        # breakpoint()
 
         # do the next run
         # t = solver.dorun(config, instance, seed, args.max_solver_time)
         # TODO: add the right oracle here for t
+        ta_status, runtime, ta_runlength, ta_quality, seed = verify_instance(instance, int(os.getenv("ORACLE_CAPTIME")), config,
+                                                                                  output_queue=None, seed=seed)
 
+        t = runtime
 
-        total_cpu_time += t
+        # total_cpu_time += t
 
-        print(f"\nSMAC: total_cpu_time={total_cpu_time:.3f} of max_cpu_time={args.max_cpu_time}, \n")
-
-        if total_cpu_time > args.max_cpu_time:
-            raise KeyboardInterrupt
+        # print(f"\nSMAC: total_cpu_time={total_cpu_time:.3f} of max_cpu_time={args.max_cpu_time}, \n")
+        #
+        # if total_cpu_time > args.max_cpu_time:
+        #     raise KeyboardInterrupt
 
         return 1 - u_fn(t, **u_params)
 
@@ -139,6 +202,7 @@ def main():
     scenario = Scenario(deserialized_conf, instances=instances, instance_features=instance_features,
                         use_default_config=True, name=args.runid, walltime_limit=args.max_wallclock_time, n_trials=1e10)
     smac = ACFacade(scenario, train, overwrite=args.overwrite, logging_level=args.logginglevel)
+
 
     try:
         smac_incumbent = smac.optimize()
