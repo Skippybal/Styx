@@ -133,8 +133,8 @@ def main():
 
     all_data = []
 
-    args_list = process_configstring()
-    print(args_list)
+    # args_list = process_configstring()
+    # print(args_list)
     args_list = process_smac3_config()
 
     instance_index = 0
