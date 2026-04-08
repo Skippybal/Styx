@@ -42,13 +42,14 @@ def process_configstring():
     return args_list
 
 def process_smac3_config():
-    with open('storage_alice/smac3_output/smac3_mipverify/0/intensifier.json') as f:
+    smac_dir = os.getenv("SMAC3_OUTPUT_DIR")
+    with open(f'{smac_dir}/intensifier.json') as f:
         d = json.load(f)
         print(d["incumbent_ids"])
     best = d["incumbent_ids"][0]
 
 
-    with open('storage_alice/smac3_output/smac3_mipverify/0/runhistory.json') as f:
+    with open(f'{smac_dir}/runhistory.json') as f:
         d = json.load(f)
         print(d)
     # print(d["configs"][f"{best}"])
