@@ -26,6 +26,8 @@ import multiprocessing as mp
 from multiprocessing import Pool
 from dotenv import load_dotenv
 import os
+import json
+from itertools import chain
 
 load_dotenv("verify.env")
 
@@ -38,6 +40,25 @@ def process_configstring():
     configstring = configstring.replace("'", "")
     args_list = configstring.split(" ")
     return args_list
+
+def process_smac3_config():
+    with open('storage_alice/smac3_output/smac3_mipverify/0/intensifier.json') as f:
+        d = json.load(f)
+        print(d["incumbent_ids"])
+    best = d["incumbent_ids"][0]
+
+
+    with open('storage_alice/smac3_output/smac3_mipverify/0/runhistory.json') as f:
+        d = json.load(f)
+        print(d)
+    # print(d["configs"][f"{best}"])
+    best_config_dict = d["configs"][f"{best}"]
+    config_string = [[f"-{key}", f"{value}"] for key, value in best_config_dict.items()]
+    config_string = list(chain.from_iterable(config_string))
+    print(config_string)
+    # sys.exit()
+    return config_string
+
 
 def verify_instance(instance_loc: str, args_list, output_queue):
 
@@ -113,6 +134,8 @@ def main():
     all_data = []
 
     args_list = process_configstring()
+    print(args_list)
+    args_list = process_smac3_config()
 
     instance_index = 0
     while instance_index < len(all_files):
