@@ -18,6 +18,7 @@ from dotenv import load_dotenv
 from ConfigSpace.read_and_write import pcs_new
 import ConfigSpace
 from wrapper2 import PipelineWrapper
+# from CASMOPOLITAN.wrapper2 import  PipelineWrapper
 from copy import copy
 
 
@@ -179,6 +180,7 @@ def main():
         # do the next run
         # t = solver.dorun(config, instance, seed, args.max_solver_time)
         # TODO: add the right oracle here for t
+        # print(os.getenv("OBJECTIVE") == "PAR")
         ta_status, runtime, ta_runlength, ta_quality, seed = verify_instance(instance, int(os.getenv("ORACLE_CAPTIME")), config,
                                                                                   output_queue=None, seed=seed)
 
@@ -190,8 +192,10 @@ def main():
         #
         # if total_cpu_time > args.max_cpu_time:
         #     raise KeyboardInterrupt
-
-        return 1 - u_fn(t, **u_params)
+        if os.getenv("OBJECTIVE") == "PAR":
+            return t
+        else:
+            return 1 - u_fn(t, **u_params)
 
     # TODO: so does the params_cosmo.pcs file have threads = 1? or does it need it seperatly (nope threads seperatly
 
