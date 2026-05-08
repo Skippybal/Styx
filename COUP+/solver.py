@@ -289,7 +289,8 @@ class Solver():
         start = ['--runsolver-path',
                  # os.getenv("RUNSOLVER_LOC"),
                  os.getenv("RUNSOLVER_LOC"),
-                 instance_path, specifics, cutoff, runlength, seed
+                 instance_path, specifics, cutoff, runlength, seed,
+                 '-threads', '1' # TODO: is this correct, it wasn't there before but im not sure if its necesasry
                  ]
 
         variabls = []
