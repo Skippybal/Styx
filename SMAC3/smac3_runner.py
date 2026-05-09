@@ -20,6 +20,7 @@ import ConfigSpace
 from wrapper2 import PipelineWrapper
 # from CASMOPOLITAN.wrapper2 import  PipelineWrapper
 from copy import copy
+from smac.intensifier.intensifier import Intensifier
 
 
 def verify_instance(instance_loc: str, cutoff, config: ConfigSpace, output_queue, seed):  # TODO: seed
@@ -205,7 +206,16 @@ def main():
 
     scenario = Scenario(deserialized_conf, instances=instances, instance_features=instance_features,
                         use_default_config=True, name=args.runid, walltime_limit=args.max_wallclock_time, n_trials=1e10)
-    smac = ACFacade(scenario, train, overwrite=args.overwrite, logging_level=args.logginglevel)
+    # scenario.get
+
+    intensifier = Intensifier(
+        scenario=scenario,
+        max_config_calls=1,
+        max_incumbents=10,
+    )
+
+    smac = ACFacade(scenario, train, overwrite=args.overwrite, logging_level=args.logginglevel,
+                    intensifier=intensifier)
 
 
     try:
