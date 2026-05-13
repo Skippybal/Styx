@@ -42,6 +42,8 @@ class MIPVerifyOracle(TestFunction):
         self.all_files = sorted(glob.glob(f"{self.env_config['INSTANCE_DIR']}/*.lp"),
                            key=lambda x: int(x.split("/")[-1].split(".")[0][4:]))#[:4]
 
+        self.all_runtimes = []
+
     def _process_param_space(self):
         # param_file_loc = os.getenv('PARAM_FILE_LOC')
         # breakpoint()
@@ -236,6 +238,7 @@ class MIPVerifyOracle(TestFunction):
                 return 0.5 * (k_0 / t) ** alpha
 
         all_utility = []
+        all_runtime = []
 
         process_data_list = []
         max_processes = int(self.env_config["MAX_PROCESSES"]) #1
@@ -289,10 +292,14 @@ class MIPVerifyOracle(TestFunction):
                     # all_utility.append(log_laplace_single(new_result[1], int(self.env_config["K0_UTILITY"])))
                     all_utility.append(self.u_geometric(new_result[1], int(self.env_config["K0_UTILITY"]), int(self.env_config["K1_UTILITY"])))
 
+                    all_runtime.append(new_result[1])
+
                     del p
                     cleanup_done = False
                     break
         # breakpoint()
+        self.all_runtimes.append(np.mean(all_runtime))
+
         return -np.mean(all_utility)
 
     def compute(self, X, normalize=None):

@@ -141,6 +141,7 @@ for t in range(args.n_trials):
         # TODO: if we do batch based, this needs to be updated
         run_handle.log({
             "fX": float(Y[-1]),
+            "runtime": float(f.all_runtimes[-1]),
             "all_X": all_config_table,
         }, commit=True)
         # breakpoint()
