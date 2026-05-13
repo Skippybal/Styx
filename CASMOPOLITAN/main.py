@@ -133,6 +133,16 @@ for t in range(args.n_trials):
             Y = np.array(optim.casmopolitan.fX) * f.std + f.mean
         else:
             Y = np.array(optim.casmopolitan.fX)
+
+        all_config_data.extend([[i] + list(x_next.flatten())])
+
+        all_config_table.add_data(*([i] + list(x_next.flatten())))
+
+        # TODO: if we do batch based, this needs to be updated
+        run_handle.log({
+            "fX": float(Y[-1]),
+            "all_X": all_config_table,
+        }, commit=True)
         # breakpoint()
         if Y[:i].shape[0]:
             # sequential
@@ -147,25 +157,25 @@ for t in range(args.n_trials):
 
             # breakpoint()
 
-            all_config_data.extend([[i] + list(x_next.flatten())])
-            best_x_data.extend([[i] + list(optim.casmopolitan.X[:i * args.batch_size][argmin].flatten())])
-
-            # best_x_table = wandb.Table(columns=["run_id"] + f.names, data=best_x_data)
-            # all_config_table = wandb.Table(columns=["run_id"] + f.names, data=all_config_data)
-            all_config_table.add_data(*([i] + list(x_next.flatten())))
-            best_x_table.add_data(*([i] + list(optim.casmopolitan.X[:i * args.batch_size][argmin].flatten())))
+            # all_config_data.extend([[i] + list(x_next.flatten())])
+            # best_x_data.extend([[i] + list(optim.casmopolitan.X[:i * args.batch_size][argmin].flatten())])
+            #
+            # # best_x_table = wandb.Table(columns=["run_id"] + f.names, data=best_x_data)
+            # # all_config_table = wandb.Table(columns=["run_id"] + f.names, data=all_config_data)
+            # all_config_table.add_data(*([i] + list(x_next.flatten())))
+            # best_x_table.add_data(*([i] + list(optim.casmopolitan.X[:i * args.batch_size][argmin].flatten())))
             # run_handle.log({
             #     "all_X": all_config_table,
             #     "best_X_table": best_x_table
             # }, commit=False)
 
-            run_handle.log({
-                "fX": float(Y[-1]),
-                "fX_best": Y[:i*args.batch_size][argmin],
-                "all_X": all_config_table,
-                "best_X_table": best_x_table
-                #"X_best": optim.casmopolitan.X[:i * args.batch_size][argmin].flatten()
-            }, commit=True)
+            # run_handle.log({
+            #     "fX": float(Y[-1]),
+            #     "fX_best": Y[:i*args.batch_size][argmin],
+            #     "all_X": all_config_table,
+            #     "best_X_table": best_x_table
+            #     #"X_best": optim.casmopolitan.X[:i * args.batch_size][argmin].flatten()
+            # }, commit=True)
 
             # breakpoint()
             # best_x_table.add_data(*([i] + list(optim.casmopolitan.X[:i * args.batch_size][argmin].flatten())))
