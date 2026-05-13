@@ -111,6 +111,8 @@ class MixedOptimizer(Optimizer):
             self.X_init = np.ones((self.casmopolitan.n_init, self.true_dim))
             indbest = np.argmin(y_cand)
             # cThe initial trust region centre for the restart
+
+            # TODO: change this centre here to be the default on the first run.... but do check if the else isnt the first run...
             centre = deepcopy(X_init[indbest, :])
             # Separate the continuous and categorical parts of the centre.
             centre_cat, centre_cont = centre[self.d_cat], centre[self.d_cont]
@@ -159,14 +161,55 @@ class MixedOptimizer(Optimizer):
             # Put the two parts back by a hstack
             self.X_init = np.hstack((X_init_cat, X_init_cont))
 
-    def suggest(self, n_suggestions=1):
+    def get_default_array_doe(self, f):
+        param_file_loc = f.env_config['PARAM_FILE_LOC']
+        from ConfigSpace.read_and_write import pcs_new
+        with open(param_file_loc, 'r') as fh:
+            deserialized_conf = pcs_new.read(fh)
+        deserialized_conf.seed(721)
+
+        default_array = np.zeros((1, self.true_dim))
+
+        # default = deserialized_conf.get_default_configuration()
+        # for variable, value in default.items():
+        #     indx_in_array = f.names.index(variable)
+
+        for index, (name, obj) in enumerate(dict(deserialized_conf).items()):
+            indx_in_array = f.names.index(name)
+            # print(indx_in_array)
+
+
+            default_value = obj.default_value
+
+            #TODO if name is in the choise_dicct we need to convert whaterver category it is to the normalized range of casmo, so basically reverse the f.choice_dict
+            if name in f.index_choice_dict:
+                # breakpoint()
+                default_value = f.index_choice_dict[name].index(default_value)
+                # breakpoint()
+
+
+            default_array[0, indx_in_array] = default_value
+
+        # breakpoint()
+        return default_array
+
+    def suggest(self, f, n_suggestions=1):
         if self.batch_size is None:  # Remember the batch size on the first call to suggest
             self.batch_size = n_suggestions
             self.casmopolitan.batch_size = n_suggestions
             self.casmopolitan.n_init = max([self.casmopolitan.n_init, self.batch_size])
             self.restart()
 
+            # breakpoint()
+            # breakpoint()
+            if f.env_config['CASMO_REPLACE_DOE_BY_DEFAULT'] == 'TRUE':
+                self.X_init = self.get_default_array_doe(f)
+            #     breakpoint()
+            # breakpoint()
+
         X_next = np.zeros((n_suggestions, self.true_dim))
+
+        # TODO: actually, just add the default to X_init that would probably be best...
 
         # Pick from the initial points
         n_init = min(len(self.X_init), n_suggestions)

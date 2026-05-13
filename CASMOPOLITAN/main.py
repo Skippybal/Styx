@@ -125,7 +125,7 @@ for t in range(args.n_trials):
 
     for i in range(args.max_iters):
         start = time.time()
-        x_next = optim.suggest(args.batch_size)
+        x_next = optim.suggest(f, args.batch_size)
         y_next = f.compute(x_next, normalize=f.normalize)
         optim.observe(x_next, y_next)
         end = time.time()
