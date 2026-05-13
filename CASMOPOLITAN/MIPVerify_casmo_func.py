@@ -136,6 +136,8 @@ class MIPVerifyOracle(TestFunction):
                  instance_path, specifics, cutoff, runlength, seed,
                  '-threads', '1'] # TODO: threads seperate here becuase integration with casmopolitan
 
+        to_remove_because_auto = set()
+
         variabls = []
         # print(dict(config))
         for inde, value in enumerate(config_array):
@@ -145,6 +147,7 @@ class MIPVerifyOracle(TestFunction):
             if inde in self.categorical_dims:
                 # TODO: check this
                 variabls.append(f'{self.index_choice_dict[varname][int(value)]}')
+                # breakpoint() # TODO: check here if values are make to be double quoted and if that matters? yea f string fixes this i think
                 # print(inde)
                 # variabls.append(f'{self.index_choice_dict[inde][int(value) - 1]}')
                 # try:
@@ -164,9 +167,27 @@ class MIPVerifyOracle(TestFunction):
                 #         print(f"{ind}: {n_cats}")
                 #     sys.exit()
             elif inde in self.int_constrained_dims:
-                variabls.append(f'{int(value)}')
+                variabls.append(f'{int(value)}') # TODO: round is probably better as this cuts of top number
             else:
                 variabls.append(f'{value}')
+
+            if varname.startswith("auto_") and variabls[-1] == '1':
+                remov_thing = varname[5:]
+                if remov_thing.endswith("_on"):
+                    remov_thing = remov_thing[:-3]
+                to_remove_because_auto.add(remov_thing)
+                # breakpoint()
+
+        stored_to_remove = []
+        for i, v in enumerate(variabls):
+            if v[1:] in to_remove_because_auto:
+                stored_to_remove.extend([i, i+1])
+        for index in sorted(stored_to_remove, reverse=True):
+            del variabls[index]
+
+        # breakpoint()
+
+
 
         # variabls.extend(["runsolvtarget_argser", "None"])
         # print(sys.argv)
@@ -220,6 +241,9 @@ class MIPVerifyOracle(TestFunction):
         max_processes = int(self.env_config["MAX_PROCESSES"]) #1
 
         output_queue = mp.Queue()
+
+        # self.verify_instance(self.all_files[0], single_config, output_queue)
+        # breakpoint()
 
         instance_index = 0
         while instance_index < len(self.all_files):
