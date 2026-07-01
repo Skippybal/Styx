@@ -205,7 +205,8 @@ def main():
         deserialized_conf = pcs_new.read(fh)
 
     scenario = Scenario(deserialized_conf, instances=instances, instance_features=instance_features,
-                        use_default_config=True, name=args.runid, walltime_limit=args.max_wallclock_time, n_trials=1e10)
+                        use_default_config=True, name=args.runid, walltime_limit=args.max_wallclock_time, n_trials=1e10,
+                        seed=int(os.getenv("SMAC_SEED")))
     # scenario.get
 
     intensifier = Intensifier(
