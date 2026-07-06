@@ -2042,6 +2042,8 @@ class CustomVerify(Benchmark):
                  instance_path, specifics, cutoff, runlength, seed,
                  '-threads', '1'] # TODO: threads seperate here becuase integration with casmopolitan
 
+        to_remove_because_auto = set()
+
         variabls = []
         # breakpoint()
         for idx, value in enumerate(config_array):
@@ -2059,6 +2061,20 @@ class CustomVerify(Benchmark):
                     variabls.append(f"{round(value)}")
                 else:
                     variabls.append(f"{round(value)}")
+
+            if name.startswith("auto_") and variabls[-1] == '1':
+                remov_thing = name[5:]
+                if remov_thing.endswith("_on"):
+                    remov_thing = remov_thing[:-3]
+                to_remove_because_auto.add(remov_thing)
+                # breakpoint()
+
+        stored_to_remove = []
+        for i, v in enumerate(variabls):
+            if v[1:] in to_remove_because_auto:
+                stored_to_remove.extend([i, i+1])
+        for index in sorted(stored_to_remove, reverse=True):
+            del variabls[index]
 
 
         # breakpoint()
