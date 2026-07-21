@@ -44,6 +44,16 @@ class MIPVerifyOracle(TestFunction):
 
         self.all_runtimes = []
 
+        self.run_num_counter = 0
+
+        timestr = time.strftime("%Y%m%d-%H%M%S")
+
+        self.instance_data_storage_loc = f'data/CASMO_{timestr}/{int(self.env_config["SMAC_SEED"])}'
+
+        os.makedirs(self.instance_data_storage_loc, exist_ok=True)
+        with open(f"{self.instance_data_storage_loc}/all_instances.csv", "w") as file:
+            file.write(f"Config_ID,Instance,Runtime,Utility\n")
+
     def _process_param_space(self):
         # param_file_loc = os.getenv('PARAM_FILE_LOC')
         # breakpoint()
@@ -211,7 +221,7 @@ class MIPVerifyOracle(TestFunction):
 
         output_queue.put((wrapped_runner._ta_status, float(wrapped_runner._ta_runtime),
                           str(wrapped_runner._ta_runlength), str(wrapped_runner._ta_quality),
-                          str(wrapped_runner._seed)))
+                          str(wrapped_runner._seed), instance_loc))
 
     @staticmethod
     def log_laplace_single(t, k_0, alpha=1):
@@ -236,6 +246,8 @@ class MIPVerifyOracle(TestFunction):
                 return 1 - 0.5 * (t / k_0) ** alpha
             else:
                 return 0.5 * (k_0 / t) ** alpha
+
+        self.run_num_counter += 1
 
         all_utility = []
         all_runtime = []
@@ -263,7 +275,14 @@ class MIPVerifyOracle(TestFunction):
 
                         # TODO: this captime thiny fix.... make consistent with the one above in verify_instance..
                         # all_utility.append(log_laplace_single(new_result[1], int(self.env_config["K0_UTILITY"])))
-                        all_utility.append(self.u_geometric(new_result[1], int(self.env_config["K0_UTILITY"]), int(self.env_config["K1_UTILITY"])))
+                        all_utility.append(self.u_geometric(new_result[1], int(self.env_config['K0_UTILITY']), int(self.env_config['K1_UTILITY'])))
+
+
+
+                        all_runtime.append(new_result[1])
+
+                        with open(f"{self.instance_data_storage_loc }/all_instances.csv", "a") as filehandle:
+                            filehandle.write(f"{self.run_num_counter},{new_result[-1]},{new_result[1]},{self.u_geometric(new_result[1], int(self.env_config['K0_UTILITY']), int(self.env_config['K1_UTILITY']))}\n")
 
 
 
@@ -293,6 +312,9 @@ class MIPVerifyOracle(TestFunction):
                     all_utility.append(self.u_geometric(new_result[1], int(self.env_config["K0_UTILITY"]), int(self.env_config["K1_UTILITY"])))
 
                     all_runtime.append(new_result[1])
+
+                    with open(f"{self.instance_data_storage_loc}/all_instances.csv", "a") as filehandle:
+                        filehandle.write(f"{self.run_num_counter},{new_result[-1]},{new_result[1]},{self.u_geometric(new_result[1], int(self.env_config['K0_UTILITY']), int(self.env_config['K1_UTILITY']))}\n")
 
                     del p
                     cleanup_done = False
