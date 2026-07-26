@@ -2017,6 +2017,18 @@ class CustomVerify(Benchmark):
         # TODO: check this?
         # self.random_flips =
 
+        self.all_runtimes = []
+
+        self.run_num_counter = 0
+
+        timestr = time.strftime("%Y%m%d-%H%M%S")
+
+        self.instance_data_storage_loc = f'data/Bounce_{timestr}/{int(self.env_config["SMAC_SEED"])}'
+
+        os.makedirs(self.instance_data_storage_loc, exist_ok=True)
+        with open(f"{self.instance_data_storage_loc}/all_instances.csv", "w") as file:
+            file.write(f"Config_ID,Instance,Runtime,Utility\n")
+
 
         self.run_handle = wandb.init(
             # Set the wandb entity where your project will be logged (generally your team name).
@@ -2099,7 +2111,7 @@ class CustomVerify(Benchmark):
 
         output_queue.put((wrapped_runner._ta_status, float(wrapped_runner._ta_runtime),
                           str(wrapped_runner._ta_runlength), str(wrapped_runner._ta_quality),
-                          str(wrapped_runner._seed)))
+                          str(wrapped_runner._seed), instance_loc))
 
 
     @staticmethod
@@ -2121,7 +2133,12 @@ class CustomVerify(Benchmark):
 
     def _verify_instances_config(self, single_config):
 
+        self.run_num_counter += 1
+
         all_utility = []
+
+        all_runtime = []
+
 
         process_data_list = []
         max_processes = int(self.env_config["MAX_PROCESSES"]) #1
@@ -2143,6 +2160,15 @@ class CustomVerify(Benchmark):
 
                         # TODO: this captime thiny fix.... make consistent with the one above in verify_instance..
                         all_utility.append(self.u_geometric(new_result[1], int(self.env_config["K0_UTILITY"]), int(self.env_config["K1_UTILITY"])))
+
+
+
+                        all_runtime.append(new_result[1])
+
+                        with open(f"{self.instance_data_storage_loc}/all_instances.csv", "a") as filehandle:
+                            filehandle.write(
+                                f"{self.run_num_counter},{new_result[-1]},{new_result[1]},{self.u_geometric(new_result[1], int(self.env_config['K0_UTILITY']), int(self.env_config['K1_UTILITY']))}\n")
+
 
                         del p
                         cleanup_done = False
@@ -2170,10 +2196,22 @@ class CustomVerify(Benchmark):
                     # TODO: this captime thiny fix.... make consistent with the one above in verify_instance..
                     all_utility.append(self.u_geometric(new_result[1], int(self.env_config["K0_UTILITY"]), int(self.env_config["K1_UTILITY"])))
 
+
+
+                    # all_runtime.append(new_result[1])
+                    all_runtime.append(new_result[1])
+
+                    with open(f"{self.instance_data_storage_loc}/all_instances.csv", "a") as filehandle:
+                        filehandle.write(
+                            f"{self.run_num_counter},{new_result[-1]},{new_result[1]},{self.u_geometric(new_result[1], int(self.env_config['K0_UTILITY']), int(self.env_config['K1_UTILITY']))}\n")
+
                     del p
                     cleanup_done = False
                     break
         # breakpoint()
+
+        self.all_runtimes.append(np.mean(all_runtime))
+
         return -np.mean(all_utility)
 
     def __call__(
@@ -2215,6 +2253,7 @@ class CustomVerify(Benchmark):
 
             self.run_handle.log({
                     "fX": results[-1],
+                    "runtime": self.all_runtimes[-1],
                 }, commit=True)
 
         return torch.tensor(results)
