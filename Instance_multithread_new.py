@@ -34,9 +34,13 @@ load_dotenv("verify.env")
 STORAGE_LOC = os.getenv("STORAGE_LOC")#"./storage/Instance_multithread_new_runsolver2"
 
 def process_configstring():
+    # Thiss should be the new one....
     # configstring = "-aggregate '1' -auto_aggfill_on '1' -auto_barcorrectors '1' -auto_barhomogeneous '1' -auto_barorder '1' -auto_bqpcuts_on '1' -auto_branchdir_on '1' -auto_cliquecuts_on '1' -auto_covercuts_on '1' -auto_crossover '1' -auto_cutaggpasses_on '1' -auto_cutpasses_on '1' -auto_cuts_on '1' -auto_degenmoves_on '1' -auto_disconnected_on '1' -auto_flowcovercuts_on '1' -auto_flowpathcuts_on '1' -auto_gomorypasses_on '0' -auto_gubcovercuts_on '0' -auto_impliedcuts_on '1' -auto_infproofcuts_on '1' -auto_issmethod_on '1' -auto_minrelnodes_on '1' -auto_mipsepcuts_on '1' -auto_mircuts_on '1' -auto_modkcuts_on '1' -auto_networkcuts_on '1' -auto_nodemethod_on '1' -auto_normadjust_on '1' -auto_predual_on '1' -auto_prepasses_on '1' -auto_presolve_on '1' -auto_presparsify_on '1' -auto_projimpliedcuts_on '1' -auto_pumppasses_on '1' -auto_quad_on '1' -auto_relaxliftcuts_on '1' -auto_rins_on '1' -auto_rltcuts_on '0' -auto_sifting_on '1' -auto_siftmethod_on '1' -auto_simplexpricing_on '0' -auto_startnodelimit '1' -auto_strongcgcuts_on '1' -auto_submipcuts_on '1' -auto_symmetry_on '0' -auto_varbranch_on '1' -auto_zerohalfcuts_on '1' -auto_zeroobjnodes_on '1' -crossoverbasis '0' -dualreductions '1' -gomorypasses '16' -gubcovercuts '1' -heuristics '0.049999999999999996' -improvestartgap '0.0' -improvestartnodes '2000000.0' -improvestarttime '1711941.2860724456' -infunbdinfo '0' -mipfocus '0' -partitionplace '15' -perturbvalue '2.0000000000000004E-4' -precrush '0' -predeprow '1' -rltcuts '1' -shut_off_mip_start_processing '0' -simplexpricing '0' -submipnodes '229' -symmetry '1' -threads '1'"
     # TODO: check if this is default or just wrong..
+
+    # Thiss should bbe default ////This was new one found by smac2
     configstring = "-aggregate '1' -auto_aggfill_on '1' -auto_barcorrectors '1' -auto_barhomogeneous '1' -auto_barorder '1' -auto_bqpcuts_on '1' -auto_branchdir_on '1' -auto_cliquecuts_on '1' -auto_covercuts_on '1' -auto_crossover '1' -auto_cutaggpasses_on '1' -auto_cutpasses_on '1' -auto_cuts_on '1' -auto_degenmoves_on '1' -auto_disconnected_on '1' -auto_flowcovercuts_on '1' -auto_flowpathcuts_on '1' -auto_gomorypasses_on '1' -auto_gubcovercuts_on '1' -auto_impliedcuts_on '1' -auto_infproofcuts_on '1' -auto_issmethod_on '1' -auto_minrelnodes_on '1' -auto_mipsepcuts_on '1' -auto_mircuts_on '1' -auto_modkcuts_on '1' -auto_networkcuts_on '1' -auto_nodemethod_on '1' -auto_normadjust_on '1' -auto_predual_on '1' -auto_prepasses_on '1' -auto_presolve_on '1' -auto_presparsify_on '1' -auto_projimpliedcuts_on '1' -auto_pumppasses_on '1' -auto_quad_on '1' -auto_relaxliftcuts_on '1' -auto_rins_on '1' -auto_rltcuts_on '1' -auto_sifting_on '1' -auto_siftmethod_on '1' -auto_simplexpricing_on '1' -auto_startnodelimit '1' -auto_strongcgcuts_on '1' -auto_submipcuts_on '1' -auto_symmetry_on '1' -auto_varbranch_on '1' -auto_zerohalfcuts_on '1' -auto_zeroobjnodes_on '1' -crossoverbasis '0' -dualreductions '1' -heuristics '0.049999999999999996' -improvestartgap '0.0' -improvestartnodes '2000000.0' -improvestarttime '2000000.0' -infunbdinfo '0' -mipfocus '0' -partitionplace '15' -perturbvalue '2.0000000000000004E-4' -precrush '0' -predeprow '-1' -shut_off_mip_start_processing '0' -submipnodes '500' -threads '1'"
+
     configstring = configstring.replace("'", "")
     args_list = configstring.split(" ")
     return args_list
@@ -73,7 +77,8 @@ def verify_instance(instance_loc: str, args_list, output_queue):
     start = ['--runsolver-path',
              #'/home/skippybal/Projects/Styx/aclib2/configurators/smac/example_scenarios/spear-generic-wrapper/runsolver',
              os.getenv("RUNSOLVER_LOC"),
-             instance_path, specifics, cutoff, runlength, seed]
+             instance_path, specifics, cutoff, runlength, seed,
+             '-threads', '1'] # TODO: the string doesnt need threads=1 because its in the other ones, but smac3 kinda does... so add just to make sure? This might actually be why smac3 looks faster?
     # start = ['--runsolver-path', '/home/skippybal/Projects/THESIS/aclib2/configurators/smac/example_scenarios/spear-generic-wrapper/runsolver', instance_path, '0', '9600.0', '2147483647', '-1']
 
     # # sys.stdout.write(config)
@@ -122,7 +127,7 @@ def main():
 
     print(len(glob.glob("aclib2/instances/mip/data/SDPdMLPa-MIPVerify/*.lp")))
 
-    all_files =sorted(glob.glob("aclib2/instances/mip/data/SDPdMLPa-MIPVerify/*.lp"), key=lambda x: int(x.split("/")[-1].split(".")[0][4:]) )
+    all_files =sorted(glob.glob("aclib2/instances/mip/data/SDPdMLPa-MIPVerify/*1174.lp"), key=lambda x: int(x.split("/")[-1].split(".")[0][4:]) )
 
     all_files = all_files
 
@@ -134,9 +139,9 @@ def main():
 
     all_data = []
 
-    # args_list = process_configstring()
+    args_list = process_configstring()
     # print(args_list)
-    args_list = process_smac3_config()
+    # args_list = process_smac3_config()
 
     instance_index = 0
     while instance_index < len(all_files):

@@ -115,7 +115,8 @@ class COUP:
 
         start = ['--runsolver-path',
                  runsolver_path,
-                 instance_path, specifics, str(cutoff), runlength, seed]
+                 instance_path, specifics, str(cutoff), runlength, seed,
+                 '-threads', '1']
 
         # sys.stdout.write(config)
         variabls = []
